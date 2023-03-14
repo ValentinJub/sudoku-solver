@@ -1,7 +1,8 @@
 class SudokuSolver {
 
+  //if we instanciate this class with a puzzle we put it in this.puzzle
   constructor(puzzle = '') {
-    if(puzzle) this.fillLogicGrid(puzzle);
+    if(puzzle) this.puzzle = puzzle;
   }
 
   fillLogicGrid(puzzleString) {
@@ -14,7 +15,11 @@ class SudokuSolver {
     this.rows = this.fillRows2(puzzle);
     this.columns = this.fillColumns(puzzle);
     this.regions= this.fillRegions(puzzle);
-    this.validate();
+  }
+
+  testing(puzzle) {
+    this.fillLogicGrid(puzzle)
+    this.validate(puzzle)
     this.validateRow();
     this.validateColumn();
     this.validateRegion();
@@ -49,7 +54,6 @@ class SudokuSolver {
     });
   }
   
-
   fillRegions(puzzleString) {
     let arrayOfRegions = [];
     const str = puzzleString;
@@ -133,7 +137,7 @@ class SudokuSolver {
     if(!this.checkPuzzleLength(puzzleString)) {
       return "Expected puzzle to be 81 characters long"
     }
-    else if(!this.checkPuzzleInputs(puzzleString)) {
+    if(!this.checkPuzzleInputs(puzzleString)) {
       return "Invalid characters in puzzle"
     }
     return true;
@@ -155,8 +159,17 @@ class SudokuSolver {
     return true;
   }
 
-
-
+  returnMissingNumbers(arr) {
+    //given an arr, determine which integers are missing from that arrray
+    const missing = [];
+    for (let i = 1; i <= 9; i++) {
+      if (!arr.includes(i)) {
+      missing.push(i);
+      }
+    }
+    //if we have identified missing numbers we return them otherwise we return false
+    return missing.length > 0 ? missing : false; 
+  }
 
   //return false on repeat number found in row
   //you can specify the row or provide your own set
