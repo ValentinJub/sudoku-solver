@@ -1,3 +1,5 @@
+const r = require('./region-index.js')
+
 class SudokuSolver {
 
   //if we instanciate this class with a puzzle we put it in this.puzzle
@@ -13,8 +15,8 @@ class SudokuSolver {
     */
     const puzzle = puzzleString;
     this.rows = this.fillRows2(puzzle);
-    this.columns = this.fillColumns(puzzle);
-    this.regions= this.fillRegions(puzzle);
+    // this.columns = this.fillColumns(puzzle);
+    // this.regions= this.fillRegions(puzzle);
   }
 
   testing(puzzle) {
@@ -163,6 +165,7 @@ class SudokuSolver {
     return puzzleIsValid;
   }
 
+  //return a string of the puzzle
   givePuzzleString() {
     let str = '';
     for(let i = 0; i < 9; i++) {
@@ -206,8 +209,7 @@ class SudokuSolver {
   //return false on repeat number found in row
   //you can specify the row or provide your own set
   //does not return false on repeat dot '.'
-  validateRow(row = 1, arr = []) {
-    const rowIndex = row - 1;
+  validateRow(rowIndex = 8, arr = []) {
     if(arr.length < 9) {
       arr = [...this.rows[rowIndex]];
     }
@@ -216,7 +218,7 @@ class SudokuSolver {
       return true;
     }
     else {
-      console.log('ValidateRow() returned false')
+      console.log('ValidateRow() returned false at index: ' + rowIndex)
       return false;
     }
   }
@@ -224,17 +226,18 @@ class SudokuSolver {
   //return false on repeat number found in column 
   //you can specify the  columnor provide your own set
   //does not return false on repeat dot '.'
-  validateColumn(column = 1, arr = []) {
-    const columnIndex = column - 1;
+  validateColumn(columnIndex = 8, arr = []) {
     if(arr.length < 9) {
-      arr = [...this.columns[columnIndex]];
+      arr = [...this.rows[columnIndex].map((e,i) => {
+        return this.rows[i][columnIndex];
+      })];
     }
     if(this.checkForRepeatNumber(arr)) {
       console.log('ValidateColumn() returned true')
       return true;
     }
     else {
-      console.log('ValidateColumn() returned false')
+      console.log('ValidateColumn() returned false at index: ' + columnIndex)
       return false;
     }
   }
@@ -242,17 +245,19 @@ class SudokuSolver {
   //return false on repeat number found in region
   //you can specify the region or provide your own set
   //does not return false on repeat dot '.'
-  validateRegion(region = 1, arr = []) {
-    const regionIndex= region - 1;
+  validateRegion(regionIndex = 8, arr = []) {
     if(arr.length < 9) {
-      arr = [...this.regions[regionIndex]];
+      console.log(r.region[0])
+      arr = [...this.rows[regionIndex].map((e,i) => {
+        return this.rows[r.region[regionIndex][i][0]][r.region[regionIndex][i][1]]
+      })];
     }
     if(this.checkForRepeatNumber(arr)) {
       console.log('ValidateRegion() returned true')
       return true;
     }
     else {
-      console.log('ValidateRegion() returned false')
+      console.log('ValidateRegion() returned false at index: ' + regionIndex)
       return false;
     }
   }
