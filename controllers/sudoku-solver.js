@@ -23,6 +23,7 @@ class SudokuSolver {
     this.validateRow();
     this.validateColumn();
     this.validateRegion();
+
   }
 
   fillRows(puzzleString) {
@@ -33,18 +34,18 @@ class SudokuSolver {
       arrayOfRows.push([]);
       //for each row we fill 9 values
       for(let y = 0; y < 9; y++) {
-       if(i === 0) {
+        if(i === 0) {
         arrayOfRows[i].push(str[y]) 
-       }  
-       else {
+        }  
+        else {
         let index = y + (i * 9); 
         arrayOfRows[i].push(str[index]) 
-       }
+        }
       }
     }
     return arrayOfRows;
   }
-  
+
   fillRows2(puzzleString) {
     return Array.from({ length: 9 }, (_, i) => {
       const startIndex = i * 9;
@@ -53,7 +54,7 @@ class SudokuSolver {
       return row;
     });
   }
-  
+
   fillRegions(puzzleString) {
     let arrayOfRegions = [];
     const str = puzzleString;
@@ -82,7 +83,7 @@ class SudokuSolver {
     }
     return arrayOfRegions;
   }
-  
+
   fillColumns(puzzleString) {
     let arrayOfColumns = [];
     const str = puzzleString;
@@ -91,15 +92,15 @@ class SudokuSolver {
       arrayOfColumns.push([]);
       //for each row we fill 9 values
       for(let y = 0; y < 9; y++) {
-       //first col: 0 9 18 
-       if(i === 0) {
+        //first col: 0 9 18 
+        if(i === 0) {
         let index = y * 9;
         arrayOfColumns[i].push(str[index]) 
-       }  
-       else {
+        }  
+        else {
         let index = i + (y * 9); 
         arrayOfColumns[i].push(str[index]) 
-       }
+        }
       }
     }
     return arrayOfColumns;
@@ -131,6 +132,47 @@ class SudokuSolver {
     }) 
   }
 
+  //return false on duplicate numbers or on dots
+  puzzleIsSolved() {
+    let puzzleIsValid = true;
+    for(let i = 0; i < 3; i++) {
+      for(let y = 0; y < 9; y++) {
+        switch(i) {
+          case 0:
+            puzzleIsValid = this.rows[y].every((e,index,a) => {
+              //The indexOf() method returns the first index at which a given element can be found in the array, or -1 if it is not present. 
+              return e === '.' ? false : a.indexOf(e) === index
+            }) 
+            break;
+          case 1:
+            puzzleIsValid = this.columns[y].every((e,index,a) => {
+              //The indexOf() method returns the first index at which a given element can be found in the array, or -1 if it is not present. 
+              return e === '.' ? false : a.indexOf(e) === index
+            }) 
+            break;
+          case 2:
+            puzzleIsValid = this.regions[y].every((e,index,a) => {
+              //The indexOf() method returns the first index at which a given element can be found in the array, or -1 if it is not present. 
+              return e === '.' ? false : a.indexOf(e) === index
+            }) 
+            break;
+        }
+        if(!puzzleIsValid) return false;
+      }
+    }
+    return puzzleIsValid;
+  }
+
+  givePuzzleString() {
+    let str = '';
+    for(let i = 0; i < 9; i++) {
+      for(let y = 0; y < 9; y++) {
+        str += this.rows[i][y];
+      }
+    }
+    return str;
+  }
+
   //validate a puzzle length and content - [1-9] + . 
   //returns 81 on success, or error string on error
   validate(puzzleString) {
@@ -159,17 +201,7 @@ class SudokuSolver {
     return true;
   }
 
-  returnMissingNumbers(arr) {
-    //given an arr, determine which integers are missing from that arrray
-    const missing = [];
-    for (let i = 1; i <= 9; i++) {
-      if (!arr.includes(i)) {
-      missing.push(i);
-      }
-    }
-    //if we have identified missing numbers we return them otherwise we return false
-    return missing.length > 0 ? missing : false; 
-  }
+
 
   //return false on repeat number found in row
   //you can specify the row or provide your own set
@@ -225,63 +257,46 @@ class SudokuSolver {
     }
   }
 
-// //validates puzzle length and char validity in the grid
-//     if(this.validate(puzzleString) !== 81) {
-//       return this.validate(puzzleString)
-//     }
-//     //validates coordinates
-//     if(!this.rowValidator(row) || !this.numberValidator(column)) {
-//       return {error: "Invalid coordinate"};
-//     }
-//     //validates a value
-//     if(!this.numberValidator(value)) {
-//       return {error: "Invalid value"}
-//     }
+
+
+  // //validates puzzle length and char validity in the grid
+  //     if(this.validate(puzzleString) !== 81) {
+  //       return this.validate(puzzleString)
+  //     }
+  //     //validates coordinates
+  //     if(!this.rowValidator(row) || !this.numberValidator(column)) {
+  //       return {error: "Invalid coordinate"};
+  //     }
+  //     //validates a value
+  //     if(!this.numberValidator(value)) {
+  //       return {error: "Invalid value"}
+  //     }
 
   //if the row doesn't contain repeat value we assume it is correct
   //this doesn't account for the row above/under and the column it crosses
   //nor the region is in, it just validates a row as being valid in itself
   checkRowPlacement(puzzleString, row, column, value) {
-    /*
-    we need to manage errors in inputs of value and position
-    the row will stay the same but the column has to be incremented until column < 10
-    we want to check that:
-      -the whole row contains 9 values from 1 to 9 that are never repeated
-       ex: 123456789
-    puzzleString has to contain 81 chars we need to check that 
-    row needs to be checked
-    column needs to be checked
-    value needs to be checked
-    */
-    
 
-    //we have a column and row so we can validate a single value 
-    //however we need to solve the whole row before that.
-    
     //we need to determine the position we begin with and the position we end in 
     //the puzzleString, that'll give us the actual row 
     //A = 0-8, B = 9-17 etc.. I = 72-80
 
-    let char = row
-    const charCode = char.charCodeAt(0);
-    //here we declare the starting position
-    let pos = (charCode - "A".charCodeAt(0)) * 9
-    //here we extract the row to analyse 
-    let line = puzzleString.substring(pos, pos + 9)
-    console.log(line)
+    // let char = row
+    // const charCode = char.charCodeAt(0);
+    // //here we declare the starting position
+    // let pos = (charCode - "A".charCodeAt(0)) * 9
+    // //here we extract the row to analyse 
+    // let line = puzzleString.substring(pos, pos + 9)
+    // console.log(line)
 
-    //check that the row doesn't contain repeat values
-    if(this.checkForRepeatNumber(line)) {
-      return {
-        valid: false,
-        conflict: "row"
-      }
+    // //check that the row doesn't contain repeat values
+    // if(this.checkForRepeatNumber(line)) {
+    //   return {
+    //     valid: false,
+    //     conflict: "row"
+    //   }
     }
-    //if the row doesn't contain repeat value we assume it is correct
-    //this doesn't account for the row above/under and the column it crosses
-    //nor the region is in, it just validates a row as being valid in itself
-    else return {valid: true}    
-  }
+
 
 
   checkColPlacement(puzzleString, row, column, value) {
@@ -293,7 +308,106 @@ class SudokuSolver {
   }
 
   solve(puzzleString) {
-    
+    //loop condition
+    let puzzleSolved = false;
+    let unsolvable = false;
+    //indentify the previous zone worked on
+    const previous = {
+      type: '',
+      index: 0
+    }
+    //contains the history of previous
+    const orderHistory = [];
+    //we start an alternate board called alternateBoard
+    this.startAlternateBoard(puzzleString)
+
+    //here we try to solve the puzzle 
+    do {
+      //we fill our rows columns and region
+      this.fillLogicGrid(this.alternateBoard)  
+      
+
+
+
+      //check if the loop condition has changed 
+      puzzleSolved = this.puzzleIsSolved();
+    }
+    while(!puzzleSolved)
+    //
+
+    if(unsolvable) {
+
+    }
+
+    return {
+      solution: ''//return the solution
+    }
+  }
+
+  //determine which col row reg has the least missing number
+  findOrderOfResolution() {
+    /* 
+    {
+      type: 'row'|'col'|'reg',
+      missing: 3,
+      values: [1,5,7]
+      index: 1
+    }
+    return an array of objects listing least to most missing N
+    */
+    let arr = [];
+    for(let i = 0; i < 3; i++) {
+      for(let y = 0; y < 9; y++) {
+        let missing;
+        switch(i) {
+          case 0:
+            missing = this.returnMissingNumbers(this.rows[y])
+            arr.push({
+              type: 'row',
+              missing: missing.length,
+              values: missing,
+              index: y
+            }) 
+            break;
+          case 1:
+            missing = this.returnMissingNumbers(this.columns[y])
+            arr.push({
+              type: 'column',
+              missing: missing.length,
+              values: missing,
+              index: y
+            }) 
+            break;
+          case 2:
+            missing = this.returnMissingNumbers(this.regions[y])
+            arr.push({
+              type: 'region',
+              missing: missing.length,
+              values: missing,
+              index: y
+            }) 
+            break;
+        }
+      }
+    }
+    return arr.sort((a,b) => { return a.missing - b.missing});
+  }
+
+  //initiate a board that we will fill along trying to solve it
+  startAlternateBoard() {
+    this.alternateBoard = this.puzzle;
+  }
+
+returnMissingNumbers(arr) {
+    //given an arr, determine which integers are missing from that arrray
+    const missing = [];
+    for (let i = 1; i <= 9; i++) {
+      if (!arr.includes(i.toString())) {
+      missing.push(i.toString());
+      }
+    }
+    //if we have identified missing numbers we return them otherwise we return false
+    return missing.length > 0 ? missing : []; 
   }
 }
 

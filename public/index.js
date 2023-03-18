@@ -6,7 +6,7 @@ const errorMsg = document.getElementById("error");
 //fills the text area and sudoky grid on page start
 document.addEventListener("DOMContentLoaded", () => {
   textArea.value =
-    "..9..5.2.85.4....2432......1...69.83.9.....6.62.71...9......1945....4.37.4.3..6..";
+  "1.5..2.84..63.12.7.2..5.....9..1....8.2.3674.3.7.2..9.47...8..1..16....926914.37.";
   fillpuzzle(textArea.value);
 });
 
