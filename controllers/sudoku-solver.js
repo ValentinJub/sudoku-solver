@@ -4,28 +4,32 @@ class SudokuSolver {
 
   //if we instanciate this class with a puzzle we put it in this.puzzle
   constructor(puzzle = '') {
-    if(puzzle) this.puzzle = puzzle;
+    if(puzzle) {
+      this.puzzle = puzzle;
+      this.fillLogicGrid(puzzle);
+    }
   }
 
-  fillLogicGrid(puzzleString) {
+  //fill this.rows array with the provided puzzle
+  fillLogicGrid(puzzle) {
     /*
-    Define three arrays: rows, columns and regions 
-    each containing 9 arrays of 9 values from 1 to 9 and dots 
+    Define one arrays: rows 
+    containing 9 arrays of 9 values from 1 to 9 and dots 
     representing missing value in the grid
     */
-    const puzzle = puzzleString;
     this.rows = this.fillRows2(puzzle);
-    // this.columns = this.fillColumns(puzzle);
-    // this.regions= this.fillRegions(puzzle);
   }
 
   testing(puzzle) {
     this.fillLogicGrid(puzzle)
-    this.validate(puzzle)
+    this.validatePuzzleLengthAndInputs(puzzle)
     this.validateRow();
     this.validateColumn();
     this.validateRegion();
-
+    let array = this.findOrderOfResolution()
+    // console.log(array)
+    let win = this.puzzleIsSolved()
+    // console.log(win)
   }
 
   fillRows(puzzleString) {
@@ -139,6 +143,7 @@ class SudokuSolver {
     let puzzleIsValid = true;
     for(let i = 0; i < 3; i++) {
       for(let y = 0; y < 9; y++) {
+        let arr;
         switch(i) {
           case 0:
             puzzleIsValid = this.rows[y].every((e,index,a) => {
@@ -147,13 +152,19 @@ class SudokuSolver {
             }) 
             break;
           case 1:
-            puzzleIsValid = this.columns[y].every((e,index,a) => {
+            arr = [...this.rows[y].map((e,ind) => {
+              return this.rows[ind][y]
+            })]
+            puzzleIsValid = arr.every((e,index,a) => {
               //The indexOf() method returns the first index at which a given element can be found in the array, or -1 if it is not present. 
               return e === '.' ? false : a.indexOf(e) === index
             }) 
             break;
           case 2:
-            puzzleIsValid = this.regions[y].every((e,index,a) => {
+            arr = [...this.rows[y].map((e,ind) => {
+              return this.rows[r.region[y][ind][0]][r.region[y][ind][1]]
+            })];
+            puzzleIsValid = arr.every((e,index,a) => {
               //The indexOf() method returns the first index at which a given element can be found in the array, or -1 if it is not present. 
               return e === '.' ? false : a.indexOf(e) === index
             }) 
@@ -177,22 +188,25 @@ class SudokuSolver {
   }
 
   //validate a puzzle length and content - [1-9] + . 
-  //returns 81 on success, or error string on error
-  validate(puzzleString) {
-    if(!this.checkPuzzleLength(puzzleString)) {
+  validatePuzzleLengthAndInputs(puzzleString) {
+    if(!this.puzzleIsEightyOneCharLong(puzzleString)) {
       return "Expected puzzle to be 81 characters long"
     }
-    if(!this.checkPuzzleInputs(puzzleString)) {
+    if(!this.puzzleHasOnlyValidInputs(puzzleString)) {
       return "Invalid characters in puzzle"
+    }
+    if(this.puzzleHasDuplicateNumbers()) {
+      return "Puzzle cannot be solved"
     }
     return true;
   }
 
-  checkPuzzleLength(puzzleString) {
-    return puzzleString.length === 81 ? true : false;
+  puzzleIsEightyOneCharLong(puzzleString) {
+    return puzzleString.length === 81;
   }
 
-  checkPuzzleInputs(puzzleString) {
+  //return false on inputs other than N or dots
+  puzzleHasOnlyValidInputs(puzzleString) {
     // iterate over each data value
     for(let i = 0; i < puzzleString.length; i++) {
       //we check that we only have numbers or dots
@@ -203,8 +217,6 @@ class SudokuSolver {
     }
     return true;
   }
-
-
 
   //return false on repeat number found in row
   //you can specify the row or provide your own set
@@ -262,21 +274,6 @@ class SudokuSolver {
     }
   }
 
-
-
-  // //validates puzzle length and char validity in the grid
-  //     if(this.validate(puzzleString) !== 81) {
-  //       return this.validate(puzzleString)
-  //     }
-  //     //validates coordinates
-  //     if(!this.rowValidator(row) || !this.numberValidator(column)) {
-  //       return {error: "Invalid coordinate"};
-  //     }
-  //     //validates a value
-  //     if(!this.numberValidator(value)) {
-  //       return {error: "Invalid value"}
-  //     }
-
   //if the row doesn't contain repeat value we assume it is correct
   //this doesn't account for the row above/under and the column it crosses
   //nor the region is in, it just validates a row as being valid in itself
@@ -300,9 +297,7 @@ class SudokuSolver {
     //     valid: false,
     //     conflict: "row"
     //   }
-    }
-
-
+  }
 
   checkColPlacement(puzzleString, row, column, value) {
 
@@ -312,58 +307,472 @@ class SudokuSolver {
 
   }
 
+  copyRows() {
+    this.rowsCopy = [...this.rows];
+  }
+
+  returnRegion(rowIndex, positionIndex) {
+    if(rowIndex <= 2) {
+      if(positionIndex <= 2) return 0;
+      else if(positionIndex > 2 && positionIndex <= 5) return 1;
+      else if(positionIndex > 5) return 2;
+    }
+    else if(rowIndex > 2 && rowIndex <= 5) {
+      if(positionIndex <= 2) return 3;
+      else if(positionIndex > 2 && positionIndex <= 5) return 4;
+      else if(positionIndex > 5) return 5;
+    }
+    else if(rowIndex > 5) {
+      if(positionIndex <= 2) return 6;
+      else if(positionIndex > 2 && positionIndex <= 5) return 7;
+      else if(positionIndex > 5) return 8;
+    }
+  }
+
+  puzzleHasDuplicateNumbers() {
+    for(let i = 0; i < 9; i++) {
+      if(!this.validateRow(i)) {
+        return true;
+      }
+      if(!this.validateColumn(i)) {
+        return true;
+      }
+      if(!this.validateRegion(i)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  initResolutionGrid(puzzleString) {
+    this.resolutionGrid = [...Array.from({ length: 9 }, (_, i) => {
+      const startIndex = i * 9;
+      const endIndex = startIndex + 9;
+      const row = puzzleString.slice(startIndex, endIndex).split('');
+      return row.map(e => {return e !== '.' ? 1 : '.'});
+    })];
+  }
+
+  initResolutionHistory() {
+    this.resolutionHistory = [
+      {
+        initialPuzzle: this.puzzle,
+        initialRows: [...this.rows],
+        initialResolutionGrid: [...this.resolutionGrid]
+      }
+    ]
+  }
+
+
+
   solve(puzzleString) {
     //loop condition
     let puzzleSolved = false;
     let unsolvable = false;
-    //indentify the previous zone worked on
-    const previous = {
-      type: '',
-      index: 0
-    }
-    //contains the history of previous
-    const orderHistory = [];
-    //we start an alternate board called alternateBoard
-    this.startAlternateBoard(puzzleString)
-
-    //here we try to solve the puzzle 
+    let potentialValue = [];
     do {
-      //we fill our rows columns and region
-      this.fillLogicGrid(this.alternateBoard)  
-      
-
-
-
+      this.fillObviousSquares(potentialValue);
       //check if the loop condition has changed 
       puzzleSolved = this.puzzleIsSolved();
     }
     while(!puzzleSolved)
-    //
-
-    if(unsolvable) {
-
-    }
-
+    let solvedPuzzle = this.givePuzzleString()
     return {
-      solution: ''//return the solution
+      solved: true,
+      solution: solvedPuzzle
+    }
+  }
+
+  sortPotentialValues(potentialValue, type, rowIndex, valuesToPop) {
+    potentialValue.forEach((e,i,a) => {
+      //rows
+      if(e.type === 'row' && e.rowIndex === rowIndex) {
+        for(let i = 0, len = valuesToPop.length; i < len; i++) {
+          e.value = [...e.value.map(e => { if(e !== valuesToPop[i]) return e; }).filter(e => {return e !== undefined})]
+        }
+        if(e.value.length === 1) {
+          this.rows[rowIndex][e.valueIndex] = e.value[0];
+          e.value.pop();
+        }
+      }
+      //columns
+      else if(e.type === 'column' && e.columnIndex === rowIndex) {
+        for(let i = 0, len = valuesToPop.length; i < len; i++) {
+          e.value = [...e.value.map(e => { if(e !== valuesToPop[i]) return e; }).filter(e => {return e !== undefined})]
+        }
+        if(e.value.length === 1) {
+          this.rows[e.valueIndex][rowIndex] = e.value[0];
+          e.value.pop();
+        }
+      }
+      //regions
+      else if(e.type === 'region' && e.regionIndex === rowIndex) {
+        let [ rI, pI ] = this.returnRowAndPosition(rowIndex, e.valueIndex) 
+        for(let i = 0, len = valuesToPop.length; i < len; i++) {
+          e.value = [...e.value.map(e => { if(e !== valuesToPop[i]) return e; }).filter(e => {return e !== undefined})]
+        }
+        if(e.value.length === 1) {
+          this.rows[rI][pI] = e.value[0];
+          e.value.pop();
+        }
+      }
+    })
+  }
+
+  fillObviousSquares(potentialValue) {
+    const orderHistory = [];
+    let order = this.findOrderOfResolution();
+
+    for(let i = 0, len = order.length; i < len; i++) {
+      //missing values
+      let missing = order[i].values;
+      let currentMissing = 0;
+      let valuesToPop = [];
+      //index of the row in this.rows
+      let rowIndex = order[i].index;
+      let potentialObjectToShift = 0;
+      //the index of the missing N in the row
+      let missingIndex = [];
+      //we do not evaluate row|col|reg the same way
+      switch(order[i].type) {
+        case 'row':
+          missingIndex = [...this.rows[rowIndex].map((e,i) => { return e === '.' ? i : -1}).filter(e => e !== -1)]
+          potentialObjectToShift = missingIndex.length;
+          for(let a = 0, len = missingIndex.length; a < len; a++) {
+            potentialValue.unshift({
+              type: 'row',
+              rowIndex: rowIndex,
+              valueIndex: missingIndex[a],
+              value: [],
+            })
+            for(let b = 0; b < missing.length; b++) {
+              //I fill an empty square with a possible value
+              currentMissing = missing[b];
+              this.rows[rowIndex][missingIndex[a]] = currentMissing;
+              //we need to check if the C or Reg conflicts
+              //(if conflict)
+              if(this.validateColumn(missingIndex[a])) {
+                if(this.validateRegion(this.returnRegion(rowIndex, missingIndex[a]))) {
+                  if(this.validateRow(0, this.rows[rowIndex])) {
+                    //potential valid -> fill with a dot
+                    potentialValue[0].value.push(missing[b])
+                  }
+                }
+              }
+            }
+            if(potentialValue[0].value.length === 1) {
+              this.rows[rowIndex][missingIndex[a]] = potentialValue[0].value[0];
+              valuesToPop.push(potentialValue[0].value[0]);
+              potentialValue.shift()
+              potentialObjectToShift--;
+            }
+            else {
+              this.rows[rowIndex][missingIndex[a]] = '.'
+            }
+          }
+          this.sortPotentialValues(potentialValue, 'row', rowIndex, valuesToPop);
+          for(let v = 0; v < potentialObjectToShift; v++) {
+            potentialValue.shift();
+          }
+          orderHistory.push(order[i]);
+          break;
+        case 'column':
+          missingIndex = [...this.rows[rowIndex].map((e,i) => {
+            return this.rows[i][rowIndex];
+          }).map((e,i) => { return e === '.' ? i : -1}).filter(e => e !== -1)];
+          potentialObjectToShift = missingIndex.length;
+          for(let a = 0, len = missingIndex.length; a < len; a++) {
+            potentialValue.unshift({
+              type: 'column',
+              columnIndex: rowIndex,
+              valueIndex: missingIndex[a],
+              value: []
+            })
+            for(let b = 0; b < missing.length; b++) {
+              //I fill an empty square with a possible value
+              currentMissing = missing[b];
+              this.rows[missingIndex[a]][rowIndex] = currentMissing;
+              if(this.validateColumn(rowIndex)) {
+                if(this.validateRegion(this.returnRegion(missingIndex[a], rowIndex))) {
+                  if(this.validateRow(0, this.rows[missingIndex[a]])) {
+                    //potential valid -> fill with a dot
+                    potentialValue[0].value.push(currentMissing)
+                  }
+                }
+              }
+            }
+            if(potentialValue[0].value.length === 1) {
+              this.rows[missingIndex[a]][rowIndex] = potentialValue[0].value[0];
+              valuesToPop.push(potentialValue[0].value[0]);
+              potentialValue.shift()
+              potentialObjectToShift--;
+            }
+            else {
+              this.rows[missingIndex[a]][rowIndex] = '.'
+            }
+          }
+          this.sortPotentialValues(potentialValue, 'column', rowIndex, valuesToPop);
+          for(let v = 0; v < potentialObjectToShift; v++) {
+            potentialValue.shift();
+          }
+          orderHistory.push(order[i]);
+          break;
+        case 'region':
+          missingIndex = [...this.rows[rowIndex].map((e,i) => {
+            return this.rows[r.region[rowIndex][i][0]][r.region[rowIndex][i][1]]
+          }).map((e,i) => { return e === '.' ? i : -1}).filter(e => e !== -1)]
+          potentialObjectToShift = missingIndex.length;
+          for(let a = 0, len = missingIndex.length; a < len; a++) {
+            potentialValue.unshift({
+              type: 'region',
+              regionIndex: rowIndex,
+              valueIndex: missingIndex[a],
+              value: []
+            })
+            //rowIndex = regionIndex
+              //missingIndex is region top left to bottom right
+              //0|1|2
+              //3|4|5
+              //6|7|8
+            let [ rI, pI ] = this.returnRowAndPosition(rowIndex, missingIndex[a]) 
+            for(let b = 0; b < missing.length; b++) {
+              currentMissing = missing[b];
+              this.rows[rI][pI] = currentMissing;
+              //we need to check if the C or Reg conflicts
+              //(if conflict)
+              if(this.validateColumn(pI)) {
+                if(this.validateRegion(rowIndex)) {
+                  if(this.validateRow(0, this.rows[rI])) {
+                    //potential valid -> fill with a dot
+                    potentialValue[0].value.push(missing[b])
+                  }
+                }
+              }
+            }
+            if(potentialValue[0].value.length === 1) {
+              this.rows[rI][pI] = potentialValue[0].value[0];
+              valuesToPop.push(potentialValue[0].value[0]);
+              potentialValue.shift()
+              potentialObjectToShift--;
+            }
+            else {
+              this.rows[rI][pI] = '.'
+            } 
+          }
+          this.sortPotentialValues(potentialValue, 'region', rowIndex, valuesToPop);
+          for(let v = 0; v < potentialObjectToShift; v++) {
+            potentialValue.shift();
+          }
+          orderHistory.push(order[i]);
+          break;
+      } 
+    }
+  }
+
+  returnRowAndPosition(regionIndex, positionIndex) {
+    //0|1|2
+    //3|4|5
+    //6|7|8
+    if (regionIndex === 0) {
+      switch(positionIndex) {
+        case 0:
+          return [0, 0];
+        case 1:
+          return [0, 1];
+        case 2:
+          return [0, 2];
+        case 3:
+          return [1, 0];
+        case 4:
+          return [1, 1];
+        case 5:
+          return [1, 2];
+        case 6:
+          return [2, 0];
+        case 7:
+          return [2, 1];
+        case 8:
+          return [2, 2];
+      }
+  } else if (regionIndex === 1) {
+      switch(positionIndex) {
+        case 0:
+          return [0, 3];
+        case 1:
+          return [0, 4];
+        case 2:
+          return [0, 5];
+        case 3:
+          return [1, 3];
+        case 4:
+          return [1, 4];
+        case 5:
+          return [1, 5];
+        case 6:
+          return [2, 3];
+        case 7:
+          return [2, 4];
+        case 8:
+          return [2, 5];
+      }
+  } else if (regionIndex === 2) {
+      switch(positionIndex) {
+        case 0:
+          return [0, 6];
+        case 1:
+          return [0, 7];
+        case 2:
+          return [0, 8];
+        case 3:
+          return [1, 6];
+        case 4:
+          return [1, 7];
+        case 5:
+          return [1, 8];
+        case 6:
+          return [2, 6];
+        case 7:
+          return [2, 7];
+        case 8:
+          return [2, 8];
+      }
+  } else if (regionIndex === 3) {
+      switch(positionIndex) {
+        case 0:
+          return [3, 0];
+        case 1:
+          return [3, 1];
+        case 2:
+          return [3, 2];
+        case 3:
+          return [4, 0];
+        case 4:
+          return [4, 1];
+        case 5:
+          return [4, 2];
+        case 6:
+          return [5, 0];
+        case 7:
+          return [5, 1];
+        case 8:
+          return [5, 2];
+      }
+  } else if (regionIndex === 4) {
+      switch(positionIndex) {
+        case 0:
+          return [3, 3];
+        case 1:
+          return [3, 4];
+        case 2:
+          return [3, 5];
+        case 3:
+          return [4, 3];
+        case 4:
+          return [4, 4];
+        case 5:
+          return [4, 5];
+        case 6:
+          return [5, 3];
+        case 7:
+          return [5, 4];
+        case 8:
+          return [5, 5];
+      }
+  } else if (regionIndex === 5) {
+      switch(positionIndex) {
+        case 0:
+          return [3, 6];
+        case 1:
+          return [3, 7];
+        case 2:
+          return [3, 8];
+        case 3:
+          return [4, 6];
+        case 4:
+          return [4, 7];
+        case 5:
+          return [4, 8];
+        case 6:
+          return [5, 6];
+        case 7:
+          return [5, 7];
+        case 8:
+          return [5, 8];
+      }
+  } else if (regionIndex === 6) {
+      switch(positionIndex) {
+        case 0:
+          return [6, 0];
+        case 1:
+          return [6, 1];
+        case 2:
+          return [6, 2];
+        case 3:
+          return [7, 0];
+        case 4:
+          return [7, 1];
+        case 5:
+          return [7, 2];
+        case 6:
+          return [8, 0];
+        case 7:
+          return [8, 1];
+        case 8:
+          return [8, 2];
+      }
+  } else if (regionIndex === 7) {
+      switch(positionIndex) {
+        case 0:
+          return [6, 3];
+        case 1:
+          return [6, 4];
+        case 2:
+          return [6, 5];
+        case 3:
+          return [7, 3];
+        case 4:
+          return [7, 4];
+        case 5:
+          return [7, 5];
+        case 6:
+          return [8, 3];
+        case 7:
+          return [8, 4];
+        case 8:
+          return [8, 5];
+      }
+  } else if (regionIndex === 8) {
+      switch(positionIndex) {
+        case 0:
+          return [6, 6];
+        case 1:
+          return [6, 7];
+        case 2:
+          return [6, 8];
+        case 3:
+          return [7, 6];
+        case 4:
+          return [7, 7];
+        case 5:
+          return [7, 8];
+        case 6:
+          return [8, 6];
+        case 7:
+          return [8, 7];
+        case 8:
+          return [8, 8];
+    }
     }
   }
 
   //determine which col row reg has the least missing number
+  // return an array of objects listing least to most missing N
   findOrderOfResolution() {
-    /* 
-    {
-      type: 'row'|'col'|'reg',
-      missing: 3,
-      values: [1,5,7]
-      index: 1
-    }
-    return an array of objects listing least to most missing N
-    */
     let arr = [];
     for(let i = 0; i < 3; i++) {
       for(let y = 0; y < 9; y++) {
         let missing;
+        let tempArray;
         switch(i) {
           case 0:
             missing = this.returnMissingNumbers(this.rows[y])
@@ -375,7 +784,10 @@ class SudokuSolver {
             }) 
             break;
           case 1:
-            missing = this.returnMissingNumbers(this.columns[y])
+            tempArray = [...this.rows[y].map((e,ind) => {
+              return this.rows[ind][y]
+            })]
+            missing = this.returnMissingNumbers(tempArray)
             arr.push({
               type: 'column',
               missing: missing.length,
@@ -384,7 +796,10 @@ class SudokuSolver {
             }) 
             break;
           case 2:
-            missing = this.returnMissingNumbers(this.regions[y])
+            tempArray = [...this.rows[y].map((e,ind) => {
+              return this.rows[r.region[y][ind][0]][r.region[y][ind][1]]
+            })];
+            missing = this.returnMissingNumbers(tempArray)
             arr.push({
               type: 'region',
               missing: missing.length,
@@ -395,7 +810,8 @@ class SudokuSolver {
         }
       }
     }
-    return arr.sort((a,b) => { return a.missing - b.missing});
+    return arr.filter(e => { return e.missing > 0})
+              .sort((a,b) => { return a.missing - b.missing});
   }
 
   //initiate a board that we will fill along trying to solve it
@@ -403,7 +819,7 @@ class SudokuSolver {
     this.alternateBoard = this.puzzle;
   }
 
-returnMissingNumbers(arr) {
+  returnMissingNumbers(arr) {
     //given an arr, determine which integers are missing from that arrray
     const missing = [];
     for (let i = 1; i <= 9; i++) {
