@@ -10,6 +10,39 @@ class SudokuSolver {
     }
   }
 
+  checkPlacement(coordinate, value) {
+
+    this.checkCopy();
+
+    const arr = ['A','B','C','D','E','F','G','H','I'];
+    const rowIndex = arr.indexOf(coordinate[0]);
+    const positionIndex = coordinate[1] - 1;
+   
+    if(this.solve().solved) {
+      if(this.rows[rowIndex][positionIndex] === value) {
+        return {
+          valid: true,
+        }
+      }
+      else {
+        let conflict = [];
+        this.rows[rowIndex][positionIndex] = value;
+        if(!this.validateColumn(positionIndex)) conflict.push('column')
+        if(!this.validateRegion(this.returnRegion(rowIndex, positionIndex))) conflict.push('region')
+        if(!this.validateRow(0, this.rows[rowIndex])) conflict.push('row');
+        return {
+          valid: false,
+          conflict: conflict,
+        }
+      }
+    }
+    return false;
+  }
+
+  checkCopy() {
+    this.checkRows = [...this.rows]
+  }
+
   //fill this.rows array with the provided puzzle
   fillLogicGrid(puzzle) {
     /*
@@ -120,7 +153,7 @@ class SudokuSolver {
 
   //validate a number input 
   numberValidator(num) {
-    const numValidator = /[1-9]/
+    const numValidator = /^[1-9]$/
     return numValidator.test(num);
   }
 
@@ -136,6 +169,14 @@ class SudokuSolver {
       //The indexOf() method returns the first index at which a given element can be found in the array, or -1 if it is not present. 
       return e !== '.' ? a.indexOf(e) === i : true;
     }) 
+  }
+
+  alreadyInTheGrid(coordinate, value) {
+    const arr = ['A','B','C','D','E','F','G','H','I'];
+    const rowIndex = arr.indexOf(coordinate[0]);
+    const positionIndex = coordinate[1] - 1;
+
+    return this.rows[rowIndex][positionIndex] === value
   }
 
   //return false on duplicate numbers or on dots
@@ -226,13 +267,21 @@ class SudokuSolver {
       arr = [...this.rows[rowIndex]];
     }
     if(this.checkForRepeatNumber(arr)) {
-      console.log('ValidateRow() returned true')
+      // console.log('ValidateRow() returned true')
       return true;
     }
     else {
-      console.log('ValidateRow() returned false at index: ' + rowIndex)
+      // console.log('ValidateRow() returned false at index: ' + rowIndex)
       return false;
     }
+  }
+
+  updateRow(rI, pI, val) {
+    return this.rows[rI][pI] = val;
+  }
+
+  resetLogicGrid() {
+    this.fillLogicGrid(this.puzzle);
   }
 
   //return false on repeat number found in column 
@@ -245,11 +294,11 @@ class SudokuSolver {
       })];
     }
     if(this.checkForRepeatNumber(arr)) {
-      console.log('ValidateColumn() returned true')
+      // console.log('ValidateColumn() returned true')
       return true;
     }
     else {
-      console.log('ValidateColumn() returned false at index: ' + columnIndex)
+      // console.log('ValidateColumn() returned false at index: ' + columnIndex)
       return false;
     }
   }
@@ -259,52 +308,19 @@ class SudokuSolver {
   //does not return false on repeat dot '.'
   validateRegion(regionIndex = 8, arr = []) {
     if(arr.length < 9) {
-      console.log(r.region[0])
+      // console.log(r.region[0])
       arr = [...this.rows[regionIndex].map((e,i) => {
         return this.rows[r.region[regionIndex][i][0]][r.region[regionIndex][i][1]]
       })];
     }
     if(this.checkForRepeatNumber(arr)) {
-      console.log('ValidateRegion() returned true')
+      // console.log('ValidateRegion() returned true')
       return true;
     }
     else {
-      console.log('ValidateRegion() returned false at index: ' + regionIndex)
+      // console.log('ValidateRegion() returned false at index: ' + regionIndex)
       return false;
     }
-  }
-
-  //if the row doesn't contain repeat value we assume it is correct
-  //this doesn't account for the row above/under and the column it crosses
-  //nor the region is in, it just validates a row as being valid in itself
-  checkRowPlacement(puzzleString, row, column, value) {
-
-    //we need to determine the position we begin with and the position we end in 
-    //the puzzleString, that'll give us the actual row 
-    //A = 0-8, B = 9-17 etc.. I = 72-80
-
-    // let char = row
-    // const charCode = char.charCodeAt(0);
-    // //here we declare the starting position
-    // let pos = (charCode - "A".charCodeAt(0)) * 9
-    // //here we extract the row to analyse 
-    // let line = puzzleString.substring(pos, pos + 9)
-    // console.log(line)
-
-    // //check that the row doesn't contain repeat values
-    // if(this.checkForRepeatNumber(line)) {
-    //   return {
-    //     valid: false,
-    //     conflict: "row"
-    //   }
-  }
-
-  checkColPlacement(puzzleString, row, column, value) {
-
-  }
-
-  checkRegionPlacement(puzzleString, row, column, value) {
-
   }
 
   copyRows() {
@@ -344,42 +360,35 @@ class SudokuSolver {
     return false;
   }
 
-  initResolutionGrid(puzzleString) {
-    this.resolutionGrid = [...Array.from({ length: 9 }, (_, i) => {
-      const startIndex = i * 9;
-      const endIndex = startIndex + 9;
-      const row = puzzleString.slice(startIndex, endIndex).split('');
-      return row.map(e => {return e !== '.' ? 1 : '.'});
-    })];
-  }
-
-  initResolutionHistory() {
-    this.resolutionHistory = [
-      {
-        initialPuzzle: this.puzzle,
-        initialRows: [...this.rows],
-        initialResolutionGrid: [...this.resolutionGrid]
-      }
-    ]
-  }
-
-
-
   solve(puzzleString) {
     //loop condition
     let puzzleSolved = false;
     let unsolvable = false;
     let potentialValue = [];
+    let i = 0;
     do {
       this.fillObviousSquares(potentialValue);
       //check if the loop condition has changed 
       puzzleSolved = this.puzzleIsSolved();
+      i++
+      if(i > 3) {
+        puzzleSolved = true;
+        unsolvable = true;
+      }
     }
     while(!puzzleSolved)
-    let solvedPuzzle = this.givePuzzleString()
-    return {
-      solved: true,
-      solution: solvedPuzzle
+    if(!unsolvable) {
+      let solvedPuzzle = this.givePuzzleString()
+      return {
+        solved: true,
+        solution: solvedPuzzle
+      }
+    }
+    else {
+      return {
+        solved: false,
+        conflict: 'TBC'
+      }
     }
   }
 
@@ -812,11 +821,6 @@ class SudokuSolver {
     }
     return arr.filter(e => { return e.missing > 0})
               .sort((a,b) => { return a.missing - b.missing});
-  }
-
-  //initiate a board that we will fill along trying to solve it
-  startAlternateBoard() {
-    this.alternateBoard = this.puzzle;
   }
 
   returnMissingNumbers(arr) {
